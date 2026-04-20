@@ -2,8 +2,8 @@ package com.example.imagecompressor
 
 import android.content.ContentValues
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.*
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -22,7 +22,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
@@ -39,8 +38,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/* ========================= UI ========================= */
-
 @Composable
 fun ImageCompressorApp() {
 
@@ -50,14 +47,12 @@ fun ImageCompressorApp() {
     var compressedUri by remember { mutableStateOf<Uri?>(null) }
     var targetKB by remember { mutableStateOf(TextFieldValue("50")) }
     var resultText by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            val input = context.contentResolver.openInputStream(it)
-            bitmap = BitmapFactory.decodeStream(input)
+            bitmap = loadCorrectBitmap(context, it)   // ✅ FIXED ROTATION HERE
         }
     }
 
@@ -77,7 +72,7 @@ fun ImageCompressorApp() {
             modifier = Modifier
                 .size(250.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color.LightGray),
+                .background(androidx.compose.ui.graphics.Color.LightGray),
             contentAlignment = Alignment.Center
         ) {
             bitmap?.let {
@@ -110,13 +105,10 @@ fun ImageCompressorApp() {
             onClick = {
 
                 val bmp = bitmap ?: return@Button
-                loading = true
-
                 val target = targetKB.text.toIntOrNull() ?: 50
 
                 val bytes = compressExactKB(bmp, target)
 
-                // SAVE IMAGE
                 val values = ContentValues().apply {
                     put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
                     put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
@@ -136,13 +128,10 @@ fun ImageCompressorApp() {
 
                 bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
 
-                resultText =
-                    "Target: ${target}KB\nFinal: ${bytes.size / 1024}KB\nAccuracy: ±2KB ✔"
-
-                loading = false
+                resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
             }
         ) {
-            Text("Compress Exact KB 🧠")
+            Text("Compress 🧠")
         }
 
         Spacer(Modifier.height(10.dp))
@@ -155,7 +144,7 @@ fun ImageCompressorApp() {
                         type = "image/jpeg"
                         putExtra(Intent.EXTRA_STREAM, it)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Share Image"))
+                    context.startActivity(Intent.createChooser(intent, "Share"))
                 }
             }
         ) {
@@ -164,37 +153,25 @@ fun ImageCompressorApp() {
 
         Spacer(Modifier.height(20.dp))
 
-        if (loading) CircularProgressIndicator()
-
-        Spacer(Modifier.height(10.dp))
-
         Text(resultText)
     }
 }
 
-/* ========================= ENGINE (WHATSAPP STYLE EXACT KB) ========================= */
+/* ===================== EXACT KB COMPRESSOR ===================== */
 
 fun compressExactKB(bitmap: Bitmap, targetKB: Int): ByteArray {
 
     var low = 5
     var high = 100
-
     var bestBytes = byteArrayOf()
     var bestDiff = Int.MAX_VALUE
 
     var bmp = bitmap
 
-    // 🔥 resize safety (important for stability)
     if (bmp.width > 2000 || bmp.height > 2000) {
-        bmp = Bitmap.createScaledBitmap(
-            bmp,
-            bmp.width / 2,
-            bmp.height / 2,
-            true
-        )
+        bmp = Bitmap.createScaledBitmap(bmp, bmp.width / 2, bmp.height / 2, true)
     }
 
-    // 🔥 binary search for closest match
     while (low <= high) {
 
         val mid = (low + high) / 2
@@ -212,25 +189,37 @@ fun compressExactKB(bitmap: Bitmap, targetKB: Int): ByteArray {
             bestBytes = bytes
         }
 
-        if (sizeKB > targetKB) {
-            high = mid - 1
-        } else {
-            low = mid + 1
-        }
+        if (sizeKB > targetKB) high = mid - 1 else low = mid + 1
     }
 
-    // 🔥 final correction pass (ensures tighter accuracy)
-    var finalBytes = bestBytes
-    var q = 85
+    return bestBytes
+}
 
-    while (finalBytes.size / 1024 > targetKB && q > 10) {
+/* ===================== FIX IMAGE ROTATION ===================== */
 
-        val stream = ByteArrayOutputStream()
-        bmp.compress(Bitmap.CompressFormat.JPEG, q, stream)
+fun loadCorrectBitmap(context: android.content.Context, uri: Uri): Bitmap? {
 
-        finalBytes = stream.toByteArray()
-        q -= 5
+    val input = context.contentResolver.openInputStream(uri) ?: return null
+    val bitmap = BitmapFactory.decodeStream(input)
+    input.close()
+
+    val exifInput = context.contentResolver.openInputStream(uri) ?: return bitmap
+    val exif = ExifInterface(exifInput)
+
+    val orientation = exif.getAttributeInt(
+        ExifInterface.TAG_ORIENTATION,
+        ExifInterface.ORIENTATION_NORMAL
+    )
+
+    exifInput.close()
+
+    val matrix = Matrix()
+
+    when (orientation) {
+        ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+        ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+        ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
     }
 
-    return finalBytes
+    return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
 }
