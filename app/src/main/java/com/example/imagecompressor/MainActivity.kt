@@ -1,12 +1,14 @@
 package com.example.imagecompressor
 
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.graphics.*
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -148,6 +150,7 @@ fun ImageCompressorApp() {
                 }
 
                 bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                Toast.makeText(context, "Image Downloding...", Toast.LENGTH_SHORT).show()
 
                 resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
             }
@@ -186,7 +189,7 @@ fun ImageCompressorApp() {
                 defaultElevation = 10.dp,
                 pressedElevation = 15.dp,
                 disabledElevation = 0.dp
-            )
+            ),
         ) {
              Text("Share 📤")
         }
