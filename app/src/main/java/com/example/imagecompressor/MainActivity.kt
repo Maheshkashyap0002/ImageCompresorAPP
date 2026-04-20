@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import java.io.ByteArrayOutputStream
 import java.nio.file.WatchEvent
 import kotlin.math.abs
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,10 +69,11 @@ fun ImageCompressorApp() {
     ) {
 
 
-        Spacer(Modifier.height(40.dp))
-        Text("Image Compressor", style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(50.dp))
+        Text("Compress Your Image", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+            color = Color.Black)
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(15.dp))
 
         Box(
             modifier = Modifier
@@ -90,8 +93,20 @@ fun ImageCompressorApp() {
 
         Spacer(Modifier.height(20.dp))
 
-        Button(onClick = { launcher.launch("image/*") }) {
-            Text("Select Image 📂")
+        Button(onClick = { launcher.launch("image/*") },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 110.dp),   shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue ,
+                contentColor = Color.White),
+
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 10.dp,
+                pressedElevation = 15.dp,
+                disabledElevation = 0.dp
+            )
+        ) {
+            Text("Select Image 📂",)
+
         }
 
         Spacer(Modifier.height(10.dp))
@@ -103,7 +118,9 @@ fun ImageCompressorApp() {
         )
 
         Spacer(Modifier.height(20.dp))
-
+        Text(resultText, textAlign = TextAlign.Center , color = Color.DarkGray , fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(10.dp))
         Button(
             enabled = bitmap != null,
             onClick = {
@@ -134,7 +151,17 @@ fun ImageCompressorApp() {
 
                 resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
             }
-        , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp)) {
+        , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp),   shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue ,
+                contentColor = Color.White),
+
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 10.dp,
+                pressedElevation = 15.dp,
+                disabledElevation = 0.dp
+            )
+        ) {
             Text("Compress 🧠")
         }
 
@@ -151,13 +178,20 @@ fun ImageCompressorApp() {
                     context.startActivity(Intent.createChooser(intent, "Share"))
                 }
             }
-            , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp) ) {
-            Text("Share 📤")
+            , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp) ,  shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue ,
+                contentColor = Color.White) ,
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 10.dp,
+                pressedElevation = 15.dp,
+                disabledElevation = 0.dp
+            )
+        ) {
+             Text("Share 📤")
         }
 
-        Spacer(Modifier.height(20.dp))
-        Text(resultText)
-        Spacer(Modifier.height(20.dp))
+         Spacer(Modifier.height(50.dp))
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
