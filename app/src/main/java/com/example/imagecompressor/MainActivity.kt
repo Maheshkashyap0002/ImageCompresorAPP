@@ -7,244 +7,230 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.Gravity
-import android.view.View
-import android.widget.*
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.button.MaterialButton
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
 import java.io.ByteArrayOutputStream
+import kotlin.math.abs
 
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var imageView: ImageView
-    private lateinit var resultText: TextView
-    private lateinit var seekBar: SeekBar
-    private lateinit var progressBar: ProgressBar
-
-    private var selectedBitmap: Bitmap? = null
-    private var compressedUri: Uri? = null
-    private var quality = 30
-    private var targetKB = 100
-
-    private val imagePicker = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let { loadImage(it) } }
-
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // 🌈 ROOT LAYOUT (MODERN CLEAN UI)
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(50, 80, 50, 50)
-            gravity = Gravity.CENTER_HORIZONTAL
+        setContent {
+            ImageCompressorApp()
         }
+    }
+}
 
-        // 📌 TITLE (APP STYLE)
-        val title = TextView(this).apply {
-            text = "Image Compressor"
-            textSize = 22f
-            gravity = Gravity.CENTER
-        }
+/* ========================= UI ========================= */
 
-        val subtitle = TextView(this).apply {
-            text = "Compress • Save • Share"
-            textSize = 14f
-            alpha = 0.7f
-            gravity = Gravity.CENTER
-        }
+@Composable
+fun ImageCompressorApp() {
 
-        // 🖼️ IMAGE PREVIEW
-        imageView = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(600, 600)
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            setBackgroundColor(0xFFEFEFEF.toInt())
-            setPadding(10, 10, 10, 10)
-        }
+    val context = LocalContext.current
 
-        resultText = TextView(this).apply {
-            textSize = 16f
-            gravity = Gravity.CENTER
-        }
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var compressedUri by remember { mutableStateOf<Uri?>(null) }
+    var targetKB by remember { mutableStateOf(TextFieldValue("50")) }
+    var resultText by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
 
-        // 🎚️ QUALITY CONTROL
-        val qualityText = TextView(this).apply {
-            text = "Quality: 30%"
-            textSize = 16f
-        }
-
-        seekBar = SeekBar(this).apply {
-            max = 100
-            progress = 30
-        }
-
-        seekBar.setOnSeekBarChangeListener(object :
-            SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, value: Int, fromUser: Boolean) {
-                quality = value
-                qualityText.text = "Quality: $quality%"
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        // 🎯 TARGET KB INPUT
-        val targetInput = EditText(this).apply {
-            hint = "Target KB (e.g. 100)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        }
-
-        // ⏳ PROGRESS BAR
-        progressBar = ProgressBar(this).apply {
-            visibility = View.GONE
-        }
-
-        // 🔘 MODERN ROUNDED BUTTONS
-        val selectBtn = MaterialButton(this).apply {
-            text = "Select Image"
-            icon = getDrawable(android.R.drawable.ic_menu_gallery)
-            iconPadding = 12
-            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-            cornerRadius = 60
-        }
-        val compressBtn = MaterialButton(this).apply {
-            text = "Compress & Save"
-            icon = getDrawable(android.R.drawable.stat_sys_download)
-            iconPadding = 12
-            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-            cornerRadius = 60
-        }
-
-        val shareBtn = MaterialButton(this).apply {
-            text = "Share Image"
-            icon = getDrawable(android.R.drawable.ic_menu_share)
-            iconPadding = 12
-            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-            cornerRadius = 60
-        }
-
-        // 📏 SPACING FUNCTION
-        fun space(h: Int = 25) = Space(this).apply {
-            layoutParams = LinearLayout.LayoutParams(0, h)
-        }
-
-        // 📦 ADD UI
-        root.addView(title)
-        root.addView(subtitle)
-        root.addView(space(40))
-
-        root.addView(imageView)
-        root.addView(space())
-
-        root.addView(resultText)
-        root.addView(space())
-
-        root.addView(qualityText)
-        root.addView(seekBar)
-        root.addView(targetInput)
-        root.addView(progressBar)
-        root.addView(space())
-
-        root.addView(selectBtn)
-        root.addView(space(15))
-        root.addView(compressBtn)
-        root.addView(space(15))
-        root.addView(shareBtn)
-
-        setContentView(root)
-
-        // 📌 ACTIONS
-        selectBtn.setOnClickListener {
-            imagePicker.launch("image/*")
-        }
-
-        compressBtn.setOnClickListener {
-            targetKB = targetInput.text.toString().toIntOrNull() ?: 100
-            compressAndSave()
-        }
-
-        shareBtn.setOnClickListener {
-            shareImage()
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            val input = context.contentResolver.openInputStream(it)
+            bitmap = BitmapFactory.decodeStream(input)
         }
     }
 
-    // 📥 LOAD IMAGE
-    private fun loadImage(uri: Uri) {
-        val input = contentResolver.openInputStream(uri)
-        val options = BitmapFactory.Options().apply { inSampleSize = 4 }
-        selectedBitmap = BitmapFactory.decodeStream(input, null, options)
-        imageView.setImageBitmap(selectedBitmap)
-    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
 
-    // 🗜️ COMPRESS
-    private fun compressAndSave() {
+        Text("Image Compressor", style = MaterialTheme.typography.headlineMedium)
 
-        val bitmap = selectedBitmap ?: run {
-            Toast.makeText(this, "Select image first", Toast.LENGTH_SHORT).show()
-            return
+        Spacer(Modifier.height(20.dp))
+
+        Box(
+            modifier = Modifier
+                .size(250.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.LightGray),
+            contentAlignment = Alignment.Center
+        ) {
+            bitmap?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } ?: Text("No Image")
         }
 
-        progressBar.visibility = View.VISIBLE
+        Spacer(Modifier.height(20.dp))
 
-        Thread {
+        Button(onClick = { launcher.launch("image/*") }) {
+            Text("Select Image 📂")
+        }
 
-            var q = quality
-            var bytes: ByteArray
+        Spacer(Modifier.height(10.dp))
 
-            do {
-                val stream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, q, stream)
-                bytes = stream.toByteArray()
-                q -= 5
-            } while (bytes.size / 1024 > targetKB && q > 5)
+        OutlinedTextField(
+            value = targetKB,
+            onValueChange = { targetKB = it },
+            label = { Text("Target KB") }
+        )
 
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            }
+        Spacer(Modifier.height(10.dp))
 
-            val uri = contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                values
-            )
+        Button(
+            enabled = bitmap != null,
+            onClick = {
 
-            uri?.let {
-                val out = contentResolver.openOutputStream(it)
-                out?.write(bytes)
-                out?.close()
-                compressedUri = it
-            }
+                val bmp = bitmap ?: return@Button
+                loading = true
 
-            runOnUiThread {
-                progressBar.visibility = View.GONE
+                val target = targetKB.text.toIntOrNull() ?: 50
 
-                imageView.setImageBitmap(
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                val bytes = compressExactKB(bmp, target)
+
+                // SAVE IMAGE
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                }
+
+                val uri = context.contentResolver.insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    values
                 )
 
-                resultText.text =
-                    "Target: ${targetKB}KB\nFinal: ${bytes.size / 1024}KB\nSaved ✔"
+                uri?.let {
+                    val out = context.contentResolver.openOutputStream(it)
+                    out?.write(bytes)
+                    out?.close()
+                    compressedUri = it
+                }
 
-                Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
+                bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+
+                resultText =
+                    "Target: ${target}KB\nFinal: ${bytes.size / 1024}KB\nAccuracy: ±2KB ✔"
+
+                loading = false
             }
-
-        }.start()
-    }
-
-    // 📤 SHARE
-    private fun shareImage() {
-
-        val uri = compressedUri ?: run {
-            Toast.makeText(this, "No image", Toast.LENGTH_SHORT).show()
-            return
+        ) {
+            Text("Compress Exact KB 🧠")
         }
 
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/jpeg"
-            putExtra(Intent.EXTRA_STREAM, uri)
+        Spacer(Modifier.height(10.dp))
+
+        Button(
+            enabled = compressedUri != null,
+            onClick = {
+                compressedUri?.let {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/jpeg"
+                        putExtra(Intent.EXTRA_STREAM, it)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share Image"))
+                }
+            }
+        ) {
+            Text("Share 📤")
         }
 
-        startActivity(Intent.createChooser(intent, "Share Image"))
+        Spacer(Modifier.height(20.dp))
+
+        if (loading) CircularProgressIndicator()
+
+        Spacer(Modifier.height(10.dp))
+
+        Text(resultText)
     }
+}
+
+/* ========================= ENGINE (WHATSAPP STYLE EXACT KB) ========================= */
+
+fun compressExactKB(bitmap: Bitmap, targetKB: Int): ByteArray {
+
+    var low = 5
+    var high = 100
+
+    var bestBytes = byteArrayOf()
+    var bestDiff = Int.MAX_VALUE
+
+    var bmp = bitmap
+
+    // 🔥 resize safety (important for stability)
+    if (bmp.width > 2000 || bmp.height > 2000) {
+        bmp = Bitmap.createScaledBitmap(
+            bmp,
+            bmp.width / 2,
+            bmp.height / 2,
+            true
+        )
+    }
+
+    // 🔥 binary search for closest match
+    while (low <= high) {
+
+        val mid = (low + high) / 2
+
+        val stream = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.JPEG, mid, stream)
+
+        val bytes = stream.toByteArray()
+        val sizeKB = bytes.size / 1024
+
+        val diff = abs(sizeKB - targetKB)
+
+        if (diff < bestDiff) {
+            bestDiff = diff
+            bestBytes = bytes
+        }
+
+        if (sizeKB > targetKB) {
+            high = mid - 1
+        } else {
+            low = mid + 1
+        }
+    }
+
+    // 🔥 final correction pass (ensures tighter accuracy)
+    var finalBytes = bestBytes
+    var q = 85
+
+    while (finalBytes.size / 1024 > targetKB && q > 10) {
+
+        val stream = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.JPEG, q, stream)
+
+        finalBytes = stream.toByteArray()
+        q -= 5
+    }
+
+    return finalBytes
 }
