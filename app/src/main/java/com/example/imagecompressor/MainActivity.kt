@@ -24,9 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import java.io.ByteArrayOutputStream
+import java.nio.file.WatchEvent
 import kotlin.math.abs
 
 class MainActivity : ComponentActivity() {
@@ -64,6 +66,8 @@ fun ImageCompressorApp() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
+
+        Spacer(Modifier.height(40.dp))
         Text("Image Compressor", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(Modifier.height(20.dp))
@@ -98,7 +102,7 @@ fun ImageCompressorApp() {
             label = { Text("Target KB") }
         )
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(20.dp))
 
         Button(
             enabled = bitmap != null,
@@ -130,7 +134,7 @@ fun ImageCompressorApp() {
 
                 resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
             }
-        ) {
+        , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp)) {
             Text("Compress 🧠")
         }
 
@@ -147,13 +151,24 @@ fun ImageCompressorApp() {
                     context.startActivity(Intent.createChooser(intent, "Share"))
                 }
             }
-        ) {
+            , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp) ) {
             Text("Share 📤")
         }
 
         Spacer(Modifier.height(20.dp))
-
         Text(resultText)
+        Spacer(Modifier.height(20.dp))
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "DESIGN BY MAHESH",
+                color = androidx.compose.ui.graphics.Color.Gray,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 
