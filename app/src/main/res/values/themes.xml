@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ✅ FIXED THEME -->
+    <style name="Theme.Imagecompressor" parent="Theme.Material3.DayNight.NoActionBar" />
+
+</resources>
