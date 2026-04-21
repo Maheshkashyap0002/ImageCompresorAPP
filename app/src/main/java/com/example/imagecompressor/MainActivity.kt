@@ -72,8 +72,12 @@ fun ImageCompressorApp() {
 
 
         Spacer(Modifier.height(50.dp))
-        Text("Compress Your Image", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-            color = Color.Black)
+        Text(
+            "Compress Your Image",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
 
         Spacer(Modifier.height(15.dp))
 
@@ -95,11 +99,16 @@ fun ImageCompressorApp() {
 
         Spacer(Modifier.height(20.dp))
 
-        Button(onClick = { launcher.launch("image/*") },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 110.dp),   shape = RoundedCornerShape(8.dp),
+        Button(
+            onClick = { launcher.launch("image/*") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 110.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue ,
-                contentColor = Color.White),
+                containerColor = Color.Blue,
+                contentColor = Color.White
+            ),
 
             elevation = ButtonDefaults.buttonElevation(
                 defaultElevation = 10.dp,
@@ -107,7 +116,7 @@ fun ImageCompressorApp() {
                 disabledElevation = 0.dp
             )
         ) {
-            Text("Select Image 📂",)
+            Text("Select Image 📂")
 
         }
 
@@ -120,8 +129,13 @@ fun ImageCompressorApp() {
         )
 
         Spacer(Modifier.height(20.dp))
-        Text(resultText, textAlign = TextAlign.Center , color = Color.DarkGray , fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.bodySmall)
+        Text(
+            resultText,
+            textAlign = TextAlign.Center,
+            color = Color.DarkGray,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodySmall
+        )
         Spacer(Modifier.height(10.dp))
         Button(
             enabled = bitmap != null,
@@ -133,7 +147,10 @@ fun ImageCompressorApp() {
                 val bytes = compressExactKB(bmp, target)
 
                 val values = ContentValues().apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
+                    put(
+                        MediaStore.Images.Media.DISPLAY_NAME,
+                        "IMG_${System.currentTimeMillis()}.jpg"
+                    )
                     put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                 }
 
@@ -153,11 +170,15 @@ fun ImageCompressorApp() {
                 Toast.makeText(context, "Image Downloding...", Toast.LENGTH_SHORT).show()
 
                 resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
-            }
-        , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp),   shape = RoundedCornerShape(8.dp),
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 40.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue ,
-                contentColor = Color.White),
+                containerColor = Color.Blue,
+                contentColor = Color.White
+            ),
 
             elevation = ButtonDefaults.buttonElevation(
                 defaultElevation = 10.dp,
@@ -180,21 +201,25 @@ fun ImageCompressorApp() {
                     }
                     context.startActivity(Intent.createChooser(intent, "Share"))
                 }
-            }
-            , modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp) ,  shape = RoundedCornerShape(8.dp),
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 40.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue ,
-                contentColor = Color.White) ,
+                containerColor = Color.Blue,
+                contentColor = Color.White
+            ),
             elevation = ButtonDefaults.buttonElevation(
                 defaultElevation = 10.dp,
                 pressedElevation = 15.dp,
                 disabledElevation = 0.dp
             ),
         ) {
-             Text("Share 📤")
+            Text("Share 📤")
         }
 
-         Spacer(Modifier.height(50.dp))
+        Spacer(Modifier.height(50.dp))
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
