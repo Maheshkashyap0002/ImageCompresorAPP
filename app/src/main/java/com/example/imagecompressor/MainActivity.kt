@@ -34,6 +34,7 @@ import java.nio.file.WatchEvent
 import kotlin.math.abs
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.activity.compose.BackHandler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +54,7 @@ fun ImageCompressorApp() {
     var compressedUri by remember { mutableStateOf<Uri?>(null) }
     var targetKB by remember { mutableStateOf(TextFieldValue("50")) }
     var resultText by remember { mutableStateOf("") }
-
+    var showExitDialog by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -98,7 +99,9 @@ fun ImageCompressorApp() {
         }
 
         Spacer(Modifier.height(20.dp))
-
+        BackHandler {
+            showExitDialog = true
+        }
         Button(
             onClick = { launcher.launch("image/*") },
             modifier = Modifier
@@ -229,6 +232,33 @@ fun ImageCompressorApp() {
                 color = androidx.compose.ui.graphics.Color.Gray,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        if (showExitDialog) {
+            AlertDialog(
+                onDismissRequest = { showExitDialog = false },
+                title = { Text("Exit") },
+                text = { Text("Are you sure you want to exit?") },
+
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showExitDialog = false
+                            (context as? ComponentActivity)?.finish()
+                        }
+                    ) {
+                        Text("Exit")
+                    }
+                },
+
+                dismissButton = {
+                    TextButton(
+                        onClick = { showExitDialog = false }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
             )
         }
     }
