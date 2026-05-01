@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "106211092472",
+    "firebase_url": "https://imagecompressor-339d7-default-rtdb.firebaseio.com",
+    "project_id": "imagecompressor-339d7",
+    "storage_bucket": "imagecompressor-339d7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:106211092472:android:c67f3b150c8006180bd80d",
+        "android_client_info": {
+          "package_name": "com.example.imagecompressor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqy_a0cr_8455gUKu0BFegiPmACNqjHIo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

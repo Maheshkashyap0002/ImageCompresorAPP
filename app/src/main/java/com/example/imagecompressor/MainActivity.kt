@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        com.google.firebase.FirebaseApp.initializeApp(this)
 
         // ✅ ASK PERMISSION
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

@@ -81,31 +81,61 @@ fun PremiumScreen(navController: NavController) {
                             scope.launch {
                                 isLoading = true
                                 delay(1000)
-                                val validCodes = listOf("2243203201", "Mahesh")
 
-                                if (codeInput.text in validCodes)  {
-                                    setPremium(context, true)
+                                val db = com.google.firebase.database.FirebaseDatabase.getInstance().reference
+                                val code = codeInput.text.trim()
 
-                                    showNotification(
-                                        context,
-                                        "Premium Upgrade 🚀",
-                                        "You are now a Premium user"
-                                    )
+                                db.child("codes").child(code).get().addOnSuccessListener { snapshot ->
 
-                                    Toast.makeText(
-                                        context,
-                                        "Premium Activated ✅",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    if (snapshot.exists()) {
 
-                                    navController.popBackStack()
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Invalid Code ❌",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                        val isUsed = snapshot.getValue(Boolean::class.java) ?: false
+
+                                        if (!isUsed) {
+
+                                            // ✅ Mark code as used
+                                            db.child("codes").child(code).setValue(true)
+
+                                            setPremium(context, true)
+
+                                            showNotification(
+                                                context,
+                                                "Premium Upgrade 🚀",
+                                                "You are now a Premium user"
+                                            )
+
+                                            Toast.makeText(
+                                                context,
+                                                "Premium Activated ✅",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+                                            navController.popBackStack()
+
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Code already used ❌",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Invalid Code ❌",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+
+
+
+                                }.addOnFailureListener {
+                                    isLoading = false
+                                    Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
                                 }
+
+
 
                                 isLoading = false
                             }
