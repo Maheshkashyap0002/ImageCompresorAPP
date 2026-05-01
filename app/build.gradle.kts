@@ -58,8 +58,31 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
 
-
+    implementation("androidx.core:core-splashscreen:1.2.0")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
+
+    implementation("com.airbnb.android:lottie:6.0.0")
+    implementation("com.airbnb.android:lottie-compose:6.0.0")
+
+    val nav_version = "2.9.8"
+
+    // Jetpack Compose integration
+    implementation("androidx.navigation:navigation-compose:$nav_version")
+
+    // Views/Fragments integration
+    implementation("androidx.navigation:navigation-fragment:$nav_version")
+    implementation("androidx.navigation:navigation-ui:$nav_version")
+
+    // Feature module support for Fragments
+    implementation("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
+
+    // Testing Navigation
+    androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
+
+    // JSON serialization library, works with the Kotlin serialization plugin
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
 }

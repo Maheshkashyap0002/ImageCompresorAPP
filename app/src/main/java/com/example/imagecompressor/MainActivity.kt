@@ -8,7 +8,6 @@ import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -30,31 +29,49 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import java.io.ByteArrayOutputStream
-import java.nio.file.WatchEvent
 import kotlin.math.abs
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavHostController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ImageCompressorApp()
+            AppNavigation()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        //(application as MyApp).appOpenAdManager.showAdIfAvailable(this)
     }
 }
 
 @Composable
-fun ImageCompressorApp() {
+fun ImageCompressorApp(navController: NavHostController) {
 
     val context = LocalContext.current
 
+    val scope = rememberCoroutineScope()
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var compressedUri by remember { mutableStateOf<Uri?>(null) }
     var targetKB by remember { mutableStateOf(TextFieldValue("50")) }
     var resultText by remember { mutableStateOf("") }
     var showExitDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -63,207 +80,284 @@ fun ImageCompressorApp() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-
-        Spacer(Modifier.height(50.dp))
-        Text(
-            "Compress Your Image",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-
-        Spacer(Modifier.height(15.dp))
-
-        Box(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .size(250.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(androidx.compose.ui.graphics.Color.LightGray),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            bitmap?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } ?: Text("No Image")
-        }
 
-        Spacer(Modifier.height(20.dp))
-        BackHandler {
-            showExitDialog = true
-        }
-        Button(
-            onClick = { launcher.launch("image/*") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 110.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue,
-                contentColor = Color.White
-            ),
 
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 10.dp,
-                pressedElevation = 15.dp,
-                disabledElevation = 0.dp
-            )
-        ) {
-            Text("Select Image 📂")
-
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        OutlinedTextField(
-            value = targetKB,
-            onValueChange = { targetKB = it },
-            label = { Text("Target KB") }
-        )
-
-        Spacer(Modifier.height(20.dp))
-        Text(
-            resultText,
-            textAlign = TextAlign.Center,
-            color = Color.DarkGray,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.bodySmall
-        )
-        Spacer(Modifier.height(10.dp))
-        Button(
-            enabled = bitmap != null,
-            onClick = {
-
-                val bmp = bitmap ?: return@Button
-                val target = targetKB.text.toIntOrNull() ?: 50
-
-                val bytes = compressExactKB(bmp, target)
-
-                val values = ContentValues().apply {
-                    put(
-                        MediaStore.Images.Media.DISPLAY_NAME,
-                        "IMG_${System.currentTimeMillis()}.jpg"
-                    )
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                }
-
-                val uri = context.contentResolver.insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    values
-                )
-
-                uri?.let {
-                    val out = context.contentResolver.openOutputStream(it)
-                    out?.write(bytes)
-                    out?.close()
-                    compressedUri = it
-                }
-
-                bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                Toast.makeText(context, "Image Downloding...", Toast.LENGTH_SHORT).show()
-
-                resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 40.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue,
-                contentColor = Color.White
-            ),
-
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 10.dp,
-                pressedElevation = 15.dp,
-                disabledElevation = 0.dp
-            )
-        ) {
-            Text("Compress 🧠")
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        Button(
-            enabled = compressedUri != null,
-            onClick = {
-                compressedUri?.let {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "image/jpeg"
-                        putExtra(Intent.EXTRA_STREAM, it)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share"))
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 40.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue,
-                contentColor = Color.White
-            ),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 10.dp,
-                pressedElevation = 15.dp,
-                disabledElevation = 0.dp
-            ),
-        ) {
-            Text("Share 📤")
-        }
-
-        Spacer(Modifier.height(50.dp))
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
+            Spacer(Modifier.height(50.dp))
             Text(
-                text = "DESIGN BY MAHESH",
-                color = androidx.compose.ui.graphics.Color.Gray,
+                "Compress Your Image",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+            Spacer(Modifier.height(15.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(250.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(androidx.compose.ui.graphics.Color.LightGray),
+                contentAlignment = Alignment.Center
+            ) {
+                bitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } ?: Text("No Image")
+            }
+
+            Spacer(Modifier.height(20.dp))
+            BackHandler {
+                showExitDialog = true
+            }
+            Button(
+                onClick = { launcher.launch("image/*") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 110.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Blue,
+                    contentColor = Color.White
+                ),
+
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 10.dp,
+                    pressedElevation = 15.dp,
+                    disabledElevation = 0.dp
+                )
+            ) {
+                Text("Select Image 📂")
+
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = targetKB,
+                onValueChange = { targetKB = it },
+                label = { Text("Target KB") }
+            )
+
+            Spacer(Modifier.height(20.dp))
+            Text(
+                resultText,
+                textAlign = TextAlign.Center,
+                color = Color.DarkGray,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodySmall
             )
-        }
+            Spacer(Modifier.height(10.dp))
+            Button(
+                enabled = bitmap != null,
+                onClick = {
 
-        if (showExitDialog) {
-            AlertDialog(
-                onDismissRequest = { showExitDialog = false },
-                title = { Text("Exit") },
-                text = { Text("Are you sure you want to exit?") },
+                    scope.launch {
 
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showExitDialog = false
-                            (context as? ComponentActivity)?.finish()
+                        isLoading = true
+
+                        delay(1000)
+
+                        isLoading = false
+
+                        val bmp = bitmap ?: return@launch
+                        val target = targetKB.text.toIntOrNull() ?: 50
+
+                        val bytes = compressExactKB(bmp, target)
+
+                        val values = ContentValues().apply {
+                            put(
+                                MediaStore.Images.Media.DISPLAY_NAME,
+                                "IMG_${System.currentTimeMillis()}.jpg"
+                            )
+                            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                         }
-                    ) {
-                        Text("Exit")
+
+                        val uri = context.contentResolver.insert(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            values
+                        )
+
+                        uri?.let {
+                            val out = context.contentResolver.openOutputStream(it)
+                            out?.write(bytes)
+                            out?.close()
+                            compressedUri = it
+                        }
+
+                        bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+
+                        resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
                     }
                 },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 40.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Blue,
+                    contentColor = Color.White
+                ),
 
-                dismissButton = {
-                    TextButton(
-                        onClick = { showExitDialog = false }
-                    ) {
-                        Text("Cancel")
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 10.dp,
+                    pressedElevation = 15.dp,
+                    disabledElevation = 0.dp
+                )
+            ) {
+                Text("Compress 🧠")
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            Button(
+                enabled = compressedUri != null,
+                onClick = {
+                    compressedUri?.let {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "image/jpeg"
+                            putExtra(Intent.EXTRA_STREAM, it)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Share"))
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 40.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Blue,
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 10.dp,
+                    pressedElevation = 15.dp,
+                    disabledElevation = 0.dp
+                ),
+            ) {
+                Text("Share 📤")
+            }
+
+            Spacer(Modifier.height(60.dp))
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "DESIGN BY MAHESH",
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+            }
+            Spacer(Modifier.height(40.dp))
+
+
+
+            Button(onClick = {
+                navController.navigate("premium")
+            }) {
+                Text("Go Premium 🚀")
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // For Banner Ads
+            val context = LocalContext.current
+            val activity = context.findActivity()
+
+            val isPremium = isPremiumUser(context)
+
+            if (!isPremium && activity != null) {
+
+                val adView = remember {
+                    AdView(activity).apply {   // ✅ use activity NOT context
+                        setAdSize(AdSize.BANNER)
+                        adUnitId = "ca-app-pub-3940256099942544/6300978111"
                     }
                 }
+
+                DisposableEffect(Unit) {
+                    adView.loadAd(AdRequest.Builder().build())
+
+                    onDispose {
+                        adView.destroy()
+                    }
+                }
+
+                AndroidView(
+                    modifier = Modifier.fillMaxWidth(),
+                    factory = { adView }
+                )
+            }
+            if (showExitDialog) {
+                AlertDialog(
+                    onDismissRequest = { showExitDialog = false },
+                    title = { Text("Exit") },
+                    text = { Text("Are you sure you want to exit?") },
+
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showExitDialog = false
+                                (context as? ComponentActivity)?.finish()
+                            }
+                        ) {
+                            Text("Exit")
+                        }
+                    },
+
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showExitDialog = false }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+        }
+        // for Lottie Animation
+        if (isLoading) {
+
+            val composition by rememberLottieComposition(
+                LottieCompositionSpec.RawRes(R.raw.loading1)
             )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f)), // 🔥 optional dim background
+                contentAlignment = Alignment.Center
+            ) {
+                LottieAnimation(
+                    composition = composition,
+                    iterations = LottieConstants.IterateForever,
+                    modifier = Modifier.size(150.dp)
+                )
+            }
         }
     }
+
+
 }
 
+fun Context.findActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 /* ===================== EXACT KB COMPRESSOR ===================== */
 
 fun compressExactKB(bitmap: Bitmap, targetKB: Int): ByteArray {
@@ -300,6 +394,7 @@ fun compressExactKB(bitmap: Bitmap, targetKB: Int): ByteArray {
     }
 
     return bestBytes
+
 }
 
 /* ===================== FIX IMAGE ROTATION ===================== */
