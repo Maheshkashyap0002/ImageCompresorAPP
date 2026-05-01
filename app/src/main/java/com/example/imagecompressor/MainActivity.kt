@@ -1,14 +1,18 @@
 package com.example.imagecompressor
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.*
 import android.media.ExifInterface
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,11 +38,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.example.imagecompressor.nofication.showNotification
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -46,11 +52,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+        // ✅ ASK PERMISSION
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
+        }
+
         setContent {
             AppNavigation()
         }
+
+
     }
 
     override fun onResume() {
@@ -104,7 +125,7 @@ fun ImageCompressorApp(navController: NavHostController) {
                 modifier = Modifier
                     .size(250.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(androidx.compose.ui.graphics.Color.LightGray),
+                    .background(Color.LightGray),
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let {
@@ -310,6 +331,13 @@ fun ImageCompressorApp(navController: NavHostController) {
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                showNotification(
+                                    context,
+                                    "Please Rate us ❤\uFE0F",
+                                    "Thanks for using Image Compressor App",
+                                    openPlayStore = true
+                                )
+
                                 showExitDialog = false
                                 (context as? ComponentActivity)?.finish()
                             }
@@ -355,7 +383,7 @@ fun ImageCompressorApp(navController: NavHostController) {
 
 fun Context.findActivity(): ComponentActivity? = when (this) {
     is ComponentActivity -> this
-    is android.content.ContextWrapper -> baseContext.findActivity()
+    is ContextWrapper -> baseContext.findActivity()
     else -> null
 }
 /* ===================== EXACT KB COMPRESSOR ===================== */
@@ -399,7 +427,7 @@ fun compressExactKB(bitmap: Bitmap, targetKB: Int): ByteArray {
 
 /* ===================== FIX IMAGE ROTATION ===================== */
 
-fun loadCorrectBitmap(context: android.content.Context, uri: Uri): Bitmap? {
+fun loadCorrectBitmap(context: Context, uri: Uri): Bitmap? {
 
     val input = context.contentResolver.openInputStream(uri) ?: return null
     val bitmap = BitmapFactory.decodeStream(input)

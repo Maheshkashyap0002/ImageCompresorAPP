@@ -32,6 +32,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.example.imagecompressor.nofication.showNotification
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -74,10 +75,18 @@ fun PremiumScreen(navController: NavController) {
                         isLoading = true
                         delay(1000)
 
-                        if (codeInput.text == "Mahesh") {
+                        if (codeInput.text == "2243203201") {
                             setPremium(context, true)
-                            Toast.makeText(context, "Premium Activated ✅", Toast.LENGTH_SHORT)
-                                .show()
+
+                            showNotification(
+                                context,
+                                "Premium Upgrade 🚀",
+                                "You are now a Premium user"
+                            )
+
+
+
+                            Toast.makeText(context, "Premium Activated ✅", Toast.LENGTH_SHORT).show()
                             navController.popBackStack()
                         } else {
                             Toast.makeText(context, "Invalid Code ❌", Toast.LENGTH_SHORT).show()
@@ -85,6 +94,8 @@ fun PremiumScreen(navController: NavController) {
 
                         isLoading = false
                     }
+
+
                 }
             ) {
                 Text("Activate Premium")
@@ -98,7 +109,11 @@ fun PremiumScreen(navController: NavController) {
                     delay(1000)
 
                     clearPremium(context)
-
+                    showNotification(
+                        context,
+                        "Premium Removed ❌",
+                        "You are now a Free user"
+                    )
                     isLoading = false
                     Toast.makeText(context, "Premium Reset ✅", Toast.LENGTH_SHORT).show()
                 }
