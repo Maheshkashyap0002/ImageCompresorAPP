@@ -425,3 +425,4 @@ fun loadCorrectBitmap(context: android.content.Context, uri: Uri): Bitmap? {
 
     return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
 }
+
