@@ -3,39 +3,27 @@ package com.example.imagecompressor
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.rememberLottieComposition
+import com.airbnb.lottie.compose.*
 import com.example.imagecompressor.nofication.showNotification
+import com.example.imagecompressor.ui.theme.Blue
+import com.example.imagecompressor.ui.theme.Orange
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun PremiumScreen(navController: NavController) {
@@ -47,90 +35,149 @@ fun PremiumScreen(navController: NavController) {
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ✅ MAIN UI
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        // ✅ CARD UI
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
 
-            Text("Enter Premium Code", fontWeight = FontWeight.Bold)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
-            Spacer(Modifier.height(20.dp))
+                    Text(
+                        "Enter Premium Code",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
 
-            OutlinedTextField(
-                value = codeInput,
-                onValueChange = { codeInput = it },
-                label = { Text("Code") }
-            )
+                    Spacer(Modifier.height(20.dp))
 
-            Spacer(Modifier.height(20.dp))
+                    OutlinedTextField(
+                        value = codeInput,
+                        onValueChange = { codeInput = it },
+                        label = { Text("Premium Code") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-            Button(
-                enabled = codeInput.text.isNotBlank(),
-                onClick = {
-                    scope.launch {
-                        isLoading = true
-                        delay(1000)
+                    Spacer(Modifier.height(20.dp))
 
-                        if (codeInput.text == "2243203201") {
-                            setPremium(context, true)
+                    // ✅ ACTIVATE BUTTON
+                    Button(
+                        enabled = codeInput.text.isNotBlank(),
+                        onClick = {
+                            scope.launch {
+                                isLoading = true
+                                delay(1000)
+                                val validCodes = listOf("2243203201", "Mahesh")
 
-                            showNotification(
-                                context,
-                                "Premium Upgrade 🚀",
-                                "You are now a Premium user"
-                            )
+                                if (codeInput.text in validCodes)  {
+                                    setPremium(context, true)
 
+                                    showNotification(
+                                        context,
+                                        "Premium Upgrade 🚀",
+                                        "You are now a Premium user"
+                                    )
 
+                                    Toast.makeText(
+                                        context,
+                                        "Premium Activated ✅",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
 
-                            Toast.makeText(context, "Premium Activated ✅", Toast.LENGTH_SHORT).show()
-                            navController.popBackStack()
-                        } else {
-                            Toast.makeText(context, "Invalid Code ❌", Toast.LENGTH_SHORT).show()
-                        }
+                                    navController.popBackStack()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Invalid Code ❌",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
 
-                        isLoading = false
+                                isLoading = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DarkGray,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(10.dp)
+                    ) {
+                        Text("Activate Premium 💎")
                     }
 
+                    Spacer(Modifier.height(15.dp))
 
+
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isLoading = true
+                                delay(1000)
+
+                                clearPremium(context)
+
+                                showNotification(
+                                    context,
+                                    "Premium Removed ♻️",
+                                    "You are now a Free user"
+                                )
+
+                                isLoading = false
+
+                                Toast.makeText(
+                                    context,
+                                    "Premium Reset ✅",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DarkGray,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(10.dp)
+                    ) {
+                        Text("Reset Premium ♻️")
+                    }
+
+                    Spacer(Modifier.height(15.dp))
+
+                    // ✅ BACK BUTTON
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.DarkGray,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(10.dp)
+                    ) {
+                        Text("Back 🏠")
+                    }
                 }
-            ) {
-                Text("Activate Premium")
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            Button(onClick = {
-                scope.launch {
-                    isLoading = true
-                    delay(1000)
-
-                    clearPremium(context)
-                    showNotification(
-                        context,
-                        "Premium Removed ❌",
-                        "You are now a Free user"
-                    )
-                    isLoading = false
-                    Toast.makeText(context, "Premium Reset ✅", Toast.LENGTH_SHORT).show()
-                }
-            }) {
-                Text("Reset Premium")
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            Button(onClick = {
-                navController.popBackStack()
-            }) {
-                Text("Back")
             }
         }
 
-        // ✅ FULL SCREEN LOADING (CENTERED PERFECTLY)
+        // ✅ LOADING ANIMATION (CENTER)
         if (isLoading) {
 
             val composition by rememberLottieComposition(
@@ -153,6 +200,7 @@ fun PremiumScreen(navController: NavController) {
     }
 }
 
+// ✅ CLEAR PREMIUM
 fun clearPremium(context: Context) {
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     prefs.edit().clear().apply()

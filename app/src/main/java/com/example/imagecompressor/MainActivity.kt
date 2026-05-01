@@ -288,7 +288,21 @@ fun ImageCompressorApp(navController: NavHostController) {
 
             Button(onClick = {
                 navController.navigate("premium")
-            }) {
+            },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 40.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.DarkGray,
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 10.dp,
+                    pressedElevation = 15.dp,
+                    disabledElevation = 0.dp
+                )
+                ) {
                 Text("Go Premium 🚀")
             }
 
