@@ -8,9 +8,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:106211092472:android:c67f3b150c8006180bd80d",
+        "mobilesdk_app_id": "1:106211092472:android:833805ab9609cce30bd80d",
         "android_client_info": {
-          "package_name": "com.example.imagecompressor"
+          "package_name": "com.maheshcompressor"
         }
       },
       "oauth_client": [],

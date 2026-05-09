@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.imagecompressor"
+    namespace = "com.maheshcompressor"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -13,7 +13,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.imagecompressor"
+        applicationId = "com.maheshcompressor"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -88,5 +88,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:23.0.0")
     implementation("com.google.firebase:firebase-database-ktx:20.3.0")
     implementation("com.google.firebase:firebase-bom:32.7.0")
+
+    implementation("com.google.firebase:firebase-messaging:23.4.0")
 
 }
