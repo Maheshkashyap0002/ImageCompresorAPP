@@ -1,4 +1,4 @@
-package com.maheshcompressor
+package com.maheshcompressor.ui.screen.premiumscreen
 
 import android.content.Context
 

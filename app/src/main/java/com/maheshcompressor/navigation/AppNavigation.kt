@@ -1,7 +1,9 @@
-package com.maheshcompressor
+package com.maheshcompressor.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.*
+import com.maheshcompressor.ui.screen.homesccreen.HomeScreen
+import com.maheshcompressor.ui.screen.premiumscreen.PremiumScreen
 
 @Composable
 fun AppNavigation() {
@@ -10,7 +12,7 @@ fun AppNavigation() {
     NavHost(navController, startDestination = "home") {
 
         composable("home") {
-            ImageCompressorApp(navController)
+            HomeScreen(navController)
         }
 
         composable("premium") {

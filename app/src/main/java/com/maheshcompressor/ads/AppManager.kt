@@ -1,10 +1,11 @@
-package com.maheshcompressor
+package com.maheshcompressor.ads
 
 
 import android.app.Activity
 import android.app.Application
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.appopen.AppOpenAd
+import com.maheshcompressor.ui.screen.premiumscreen.isPremiumUser
 
 class AppOpenAdManager(private val application: Application) {
 

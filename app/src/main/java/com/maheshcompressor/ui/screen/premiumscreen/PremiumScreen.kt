@@ -1,4 +1,4 @@
-package com.maheshcompressor
+package com.maheshcompressor.ui.screen.premiumscreen
 
 import android.content.Context
 import android.widget.Toast
@@ -41,45 +41,7 @@ fun PremiumScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
-
-
-
-
-                TopAppBar(
-
-                    title = {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-
-                        ){
-                            Text("Premium Upgrade")
-                        }
-
-
-
-                    },
-                    navigationIcon = {
-
-
-
-
-                            IconButton(onClick = { navController.popBackStack() }) {
-
-                                Icon(
-                                    painter = painterResource(id = R.drawable.regular_outline_arrow_left),
-                                    contentDescription = "Back",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(23.dp)
-                                )
-                            }
-
-
-                    }
-                )
-
-
-
+            PremiumScreenTopBar(navController)
         }
     ) { innerPadding ->
 
@@ -93,19 +55,19 @@ fun PremiumScreen(navController: NavController) {
             ) {
 
 
-            Spacer(Modifier.height(60.dp))
+            Spacer(Modifier.height(25.dp))
 
             Image(
                 painter = painterResource(id = R.drawable.premium_banner),
                 contentDescription = "Premium Banner",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
+                    .height(190.dp)
             )
 
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth().size(330.dp)
                     .padding(horizontal = 24.dp)
                     .border(
                         1.dp, Color.LightGray,
@@ -134,7 +96,7 @@ fun PremiumScreen(navController: NavController) {
                     OutlinedTextField(
                         value = codeInput,
                         onValueChange = { codeInput = it },
-                        label = { Text("Premium Code") },
+                        label = { Text("Premium Code" ) },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -213,7 +175,7 @@ fun PremiumScreen(navController: NavController) {
                                 isLoading = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().size(45.dp),
+                        modifier = Modifier.fillMaxWidth().size(35.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DarkGray,
@@ -250,7 +212,7 @@ fun PremiumScreen(navController: NavController) {
                                 ).show()
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().size(45.dp),
+                        modifier = Modifier.fillMaxWidth().size(35.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DarkGray,
@@ -266,7 +228,7 @@ fun PremiumScreen(navController: NavController) {
                     // ✅ BACK BUTTON
                     Button(
                         onClick = { navController.popBackStack() },
-                        modifier = Modifier.fillMaxWidth().size(45.dp),
+                        modifier = Modifier.fillMaxWidth().size(35.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DarkGray,

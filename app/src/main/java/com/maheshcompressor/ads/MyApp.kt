@@ -1,8 +1,7 @@
-package com.maheshcompressor
+package com.maheshcompressor.ads
 
 import android.app.Application
 import com.google.android.gms.ads.MobileAds
-
 
 class MyApp : Application() {
 
