@@ -1,18 +1,20 @@
-package com.maheshcompressor.ads
+package com.maheshcompressor
 
 import android.app.Application
 import com.google.android.gms.ads.MobileAds
+import com.maheshcompressor.ads.AppOpenAdManager
+import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
-class MyApp : Application() {
+@HiltAndroidApp
+class BaseApplication : Application() {
 
+    @Inject
     lateinit var appOpenAdManager: AppOpenAdManager
 
     override fun onCreate() {
         super.onCreate()
-
         MobileAds.initialize(this)
-
-        appOpenAdManager = AppOpenAdManager(this)
         appOpenAdManager.loadAd()
     }
 }

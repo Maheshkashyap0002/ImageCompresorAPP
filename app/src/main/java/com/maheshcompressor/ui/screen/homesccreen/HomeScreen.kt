@@ -1,11 +1,6 @@
 package com.maheshcompressor.ui.screen.homesccreen
 
-import android.content.ContentValues
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -34,11 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,10 +39,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -59,50 +52,38 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.maheshcompressor.R
-import com.maheshcompressor.compressExactKB
 import com.maheshcompressor.findActivity
-import com.maheshcompressor.loadCorrectBitmap
 import com.maheshcompressor.nofication.showNotification
-import com.maheshcompressor.ui.screen.premiumscreen.isPremiumUser
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavHostController) {
-
+fun HomeScreen(
+    navController: NavHostController,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
 
-    val scope = rememberCoroutineScope()
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var compressedUri by remember { mutableStateOf<Uri?>(null) }
-    var targetKB by remember { mutableStateOf(TextFieldValue("50")) }
-    var resultText by remember { mutableStateOf("") }
-    var showExitDialog by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
-        uri?.let {
-            bitmap = loadCorrectBitmap(context, it)   // ✅ FIXED ROTATION HERE
-        }
+        uri?.let { viewModel.onImageSelected(it) }
     }
 
     Scaffold(
         topBar = {
             HomeScreenTopBar(text = "Compress Your Image")
         }
-    ) { innerPadding->
-
-        Box(modifier = Modifier.fillMaxSize()
-            .background(Color.White)){
-
-
-
-
-            Box(modifier = Modifier.fillMaxSize()
-                .padding(innerPadding)
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
             ) {
                 Column(
                     modifier = Modifier
@@ -111,9 +92,6 @@ fun HomeScreen(navController: NavHostController) {
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
-
-
                     Spacer(Modifier.height(15.dp))
 
                     Box(
@@ -123,7 +101,7 @@ fun HomeScreen(navController: NavHostController) {
                             .background(Color.LightGray),
                         contentAlignment = Alignment.Center
                     ) {
-                        bitmap?.let {
+                        uiState.bitmap?.let {
                             Image(
                                 bitmap = it.asImageBitmap(),
                                 contentDescription = null,
@@ -134,7 +112,7 @@ fun HomeScreen(navController: NavHostController) {
 
                     Spacer(Modifier.height(20.dp))
                     BackHandler {
-                        showExitDialog = true
+                        viewModel.setShowExitDialog(true)
                     }
                     Button(
                         onClick = { launcher.launch("image/*") },
@@ -146,7 +124,6 @@ fun HomeScreen(navController: NavHostController) {
                             containerColor = Color.Blue,
                             contentColor = Color.White
                         ),
-
                         elevation = ButtonDefaults.buttonElevation(
                             defaultElevation = 10.dp,
                             pressedElevation = 15.dp,
@@ -154,20 +131,19 @@ fun HomeScreen(navController: NavHostController) {
                         )
                     ) {
                         Text("Select Image 📂")
-
                     }
 
                     Spacer(Modifier.height(10.dp))
 
                     OutlinedTextField(
-                        value = targetKB,
-                        onValueChange = { targetKB = it },
+                        value = viewModel.targetKB,
+                        onValueChange = { viewModel.onTargetKBChange(it) },
                         label = { Text("Target KB") }
                     )
 
                     Spacer(Modifier.height(20.dp))
                     Text(
-                        resultText,
+                        uiState.resultText,
                         textAlign = TextAlign.Center,
                         color = Color.DarkGray,
                         fontWeight = FontWeight.Bold,
@@ -175,47 +151,8 @@ fun HomeScreen(navController: NavHostController) {
                     )
                     Spacer(Modifier.height(10.dp))
                     Button(
-                        enabled = bitmap != null,
-                        onClick = {
-
-                            scope.launch {
-
-                                isLoading = true
-
-                                delay(1000)
-
-                                isLoading = false
-
-                                val bmp = bitmap ?: return@launch
-                                val target = targetKB.text.toIntOrNull() ?: 50
-
-                                val bytes = compressExactKB(bmp, target)
-
-                                val values = ContentValues().apply {
-                                    put(
-                                        MediaStore.Images.Media.DISPLAY_NAME,
-                                        "IMG_${System.currentTimeMillis()}.jpg"
-                                    )
-                                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                                }
-
-                                val uri = context.contentResolver.insert(
-                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                    values
-                                )
-
-                                uri?.let {
-                                    val out = context.contentResolver.openOutputStream(it)
-                                    out?.write(bytes)
-                                    out?.close()
-                                    compressedUri = it
-                                }
-
-                                bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-
-                                resultText = "Target: ${target}KB | Final: ${bytes.size / 1024}KB ✔"
-                            }
-                        },
+                        enabled = uiState.bitmap != null,
+                        onClick = { viewModel.compressImage() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 40.dp),
@@ -224,7 +161,6 @@ fun HomeScreen(navController: NavHostController) {
                             containerColor = Color.Blue,
                             contentColor = Color.White
                         ),
-
                         elevation = ButtonDefaults.buttonElevation(
                             defaultElevation = 10.dp,
                             pressedElevation = 15.dp,
@@ -237,9 +173,9 @@ fun HomeScreen(navController: NavHostController) {
                     Spacer(Modifier.height(10.dp))
 
                     Button(
-                        enabled = compressedUri != null,
+                        enabled = uiState.compressedUri != null,
                         onClick = {
-                            compressedUri?.let {
+                            uiState.compressedUri?.let {
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = "image/jpeg"
                                     putExtra(Intent.EXTRA_STREAM, it)
@@ -275,15 +211,11 @@ fun HomeScreen(navController: NavHostController) {
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodySmall
                         )
-
                     }
                     Spacer(Modifier.height(20.dp))
 
-
-
-                    Button(onClick = {
-                        navController.navigate("premium")
-                    },
+                    Button(
+                        onClick = { navController.navigate("premium") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 40.dp),
@@ -303,16 +235,12 @@ fun HomeScreen(navController: NavHostController) {
 
                     Spacer(Modifier.height(20.dp))
 
-                    // For Banner Ads
-                    val context = LocalContext.current
                     val activity = context.findActivity()
-
-                    val isPremium = isPremiumUser(context)
+                    val isPremium = uiState.isPremium
 
                     if (!isPremium && activity != null) {
-
                         val adView = remember {
-                            AdView(activity).apply {   // ✅ use activity NOT context
+                            AdView(activity).apply {
                                 setAdSize(AdSize.BANNER)
                                 adUnitId = "ca-app-pub-6111799346544791/4637625914"
                             }
@@ -320,10 +248,7 @@ fun HomeScreen(navController: NavHostController) {
 
                         DisposableEffect(Unit) {
                             adView.loadAd(AdRequest.Builder().build())
-
-                            onDispose {
-                                adView.destroy()
-                            }
+                            onDispose { adView.destroy() }
                         }
 
                         AndroidView(
@@ -331,33 +256,31 @@ fun HomeScreen(navController: NavHostController) {
                             factory = { adView }
                         )
                     }
-                    if (showExitDialog) {
+
+                    if (uiState.showExitDialog) {
                         AlertDialog(
-                            onDismissRequest = { showExitDialog = false },
+                            onDismissRequest = { viewModel.setShowExitDialog(false) },
                             title = { Text("Exit") },
                             text = { Text("Are you sure you want to exit?") },
-
                             confirmButton = {
                                 TextButton(
                                     onClick = {
                                         showNotification(
                                             context,
-                                            "Please Rate us ❤\uFE0F",
+                                            "Please Rate us ❤️",
                                             "Thanks for using Image Compressor App",
                                             openPlayStore = true
                                         )
-
-                                        showExitDialog = false
+                                        viewModel.setShowExitDialog(false)
                                         (context as? ComponentActivity)?.finish()
                                     }
                                 ) {
                                     Text("Exit")
                                 }
                             },
-
                             dismissButton = {
                                 TextButton(
-                                    onClick = { showExitDialog = false }
+                                    onClick = { viewModel.setShowExitDialog(false) }
                                 ) {
                                     Text("Cancel")
                                 }
@@ -365,33 +288,27 @@ fun HomeScreen(navController: NavHostController) {
                         )
                     }
                 }
-                // for Lottie Animation
-                if (isLoading) {
 
-                    val composition by rememberLottieComposition(
-                        LottieCompositionSpec.RawRes(R.raw.loading1)
-                    )
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f)), // 🔥 optional dim background
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LottieAnimation(
-                            composition = composition,
-                            iterations = LottieConstants.IterateForever,
-                            modifier = Modifier.size(150.dp)
-                        )
-                    }
-                }
             }
         }
-
-
     }
-
-
-
+    if (uiState.isLoading) {
+        val composition by rememberLottieComposition(
+            LottieCompositionSpec.RawRes(R.raw.loading1)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f)),
+            contentAlignment = Alignment.Center
+        ) {
+            LottieAnimation(
+                composition = composition,
+                iterations = LottieConstants.IterateForever,
+                modifier = Modifier.size(150.dp)
+            )
+        }
+    }
 
 }

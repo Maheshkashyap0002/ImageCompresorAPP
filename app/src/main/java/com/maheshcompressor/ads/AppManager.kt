@@ -1,13 +1,18 @@
 package com.maheshcompressor.ads
 
-
 import android.app.Activity
 import android.app.Application
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.appopen.AppOpenAd
-import com.maheshcompressor.ui.screen.premiumscreen.isPremiumUser
+import com.maheshcompressor.data.repository.PremiumRepository
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AppOpenAdManager(private val application: Application) {
+@Singleton
+class AppOpenAdManager @Inject constructor(
+    private val application: Application,
+    private val premiumRepository: PremiumRepository
+) {
 
     private var appOpenAd: AppOpenAd? = null
     private var isLoadingAd = false
@@ -27,7 +32,6 @@ class AppOpenAdManager(private val application: Application) {
             adUnitId,
             request,
             object : AppOpenAd.AppOpenAdLoadCallback() {
-
                 override fun onAdLoaded(ad: AppOpenAd) {
                     appOpenAd = ad
                     isLoadingAd = false
@@ -41,16 +45,9 @@ class AppOpenAdManager(private val application: Application) {
     }
 
     fun showAdIfAvailable(activity: Activity) {
-
-
-        if (isPremiumUser(activity)) return
-
+        if (premiumRepository.isPremiumUser()) return
         if (isShowingAd) return
 
-        // If already showing → do nothing
-        if (isShowingAd) return
-
-        // If ad not ready → load it and exit
         if (appOpenAd == null) {
             loadAd()
             return
@@ -58,7 +55,6 @@ class AppOpenAdManager(private val application: Application) {
 
         appOpenAd?.fullScreenContentCallback =
             object : FullScreenContentCallback() {
-
                 override fun onAdDismissedFullScreenContent() {
                     appOpenAd = null
                     isShowingAd = false
